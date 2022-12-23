@@ -2,6 +2,7 @@ import sys
 import cv2
 import face_recognition
 import pickle
+import numpy
 import os
 
 
@@ -9,7 +10,7 @@ def main():
     names, encodings = initialTraining()
     input = UserInput()
     if input == "1":
-        FacialDetection()
+        FacialDetection(names, encodings)
     else:
         print("\nInvalid Input: Please enter an integer.\n")
         UserInput()
@@ -31,14 +32,50 @@ def initialTraining():
     return Names, Encodings
 
 
-def FacialDetection():
+def FacialDetection(Names, Encodings):
     video_capture = cv2.VideoCapture(0)
     
+    process_frame = True
+    
     while(True):
-        isReading, image = video_capture.read() # read() outputs a value determining whether the operation ran succesfully and an image
-        cv2.imshow("Camera Feed", image) #imshow takes in a string parameter to name the feed and an image or frame
+        isReading, frame = video_capture.read() # read() outputs a value determining whether the operation ran succesfully and an image or frame
+        small_frame = cv2.resize(frame, (0, 0), fx = 0.25, fy = 0.25) #Resizing to 1/4 size for faster facial recognition processing
+        small_frame = small_frame[:,:,::-1] #Converting from BGR(OpenCV uses this) to RGB(facial_recognition uses this)
         
-        #NEED TO FIX THIS, camera won't close when q is pressed
+        if process_frame:
+            face_locations = face_recognition.face_locations(small_frame)
+            face_encodings = face_recognition.face_encodings(small_frame, face_locations)
+            
+            for current_face in face_encodings:
+                isPresent = face_recognition.compare_faces(Encodings, current_face)
+                
+                euclidean_distances = face_recognition.face_distance(Encodings, current_face) #Compare euclidean face distances of known faces to a face in the image
+                best_match = numpy.argmin(euclidean_distances)
+                
+                if isPresent[best_match]:
+                    face_name = Names[best_match]
+                else: face_name = "Unknown"
+            
+        process_frame = not process_frame
+
+        faces = zip(face_locations, face_encodings)
+        for (top, right, bottom, left), image_face_encodings in faces:
+            #Scaling back to normal size
+            top *= 4
+            right *= 4
+            left *= 4
+            bottom *= 4
+                
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+            cv2.rectangle(frame, (left, bottom - 15), (right, bottom), (0, 0, 255), cv2.FILLED)
+            
+            font = cv2.FONT_HERSHEY_DUPLEX
+            cv2.putText(frame, face_name, (left+6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+        
+        
+        cv2.imshow("Camera Feed", frame) #imshow takes in a string parameter to name the feed and an image or frame
+        
+        #NEED TO FIX THIS, camera won't close when q is pressed: Error is located in 0xFF == ('q')
         
         if cv2.waitKey(1) & 0xFF ==('q'): # Pressing q will exit the while loop and stop reading input from the camera
             break
