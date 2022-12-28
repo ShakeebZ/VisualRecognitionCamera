@@ -3,7 +3,9 @@ import cv2
 import face_recognition
 import numpy
 import os
+from time import sleep
 from cvzone.FaceDetectionModule import FaceDetector
+from cvzone.HandTrackingModule import HandDetector
 
 
 def main():
@@ -49,7 +51,7 @@ def CameraProgram1(Names, Encodings):
             face_encodings = face_recognition.face_encodings(small_frame, face_locations)
             
             for current_face in face_encodings:
-                isPresent = face_recognition.compare_faces(Encodings, current_face)
+                isPresent = face_recognition.compare_faces(Encodings, current_face, tolerance = 0.6)
                 
                 euclidean_distances = face_recognition.face_distance(Encodings, current_face) #Compare euclidean face distances of known faces to a face in the image
                 best_match = numpy.argmin(euclidean_distances)
@@ -69,7 +71,7 @@ def CameraProgram1(Names, Encodings):
             bottom *= 4
                 
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2) #Border around face
-            cv2.rectangle(frame, (left, bottom - 15), (right, bottom), (0, 0, 255), cv2.FILLED) #Filled in rectangle below face for name
+            cv2.rectangle(frame, (left, bottom - 15), (right, bottom), (0, 255, 0), cv2.FILLED) #Filled in rectangle below face for name
             
             font = cv2.FONT_HERSHEY_DUPLEX
             cv2.putText(frame, face_name, (left+6, bottom - 6), font, 1.0, (255, 255, 255), 1) #Placing text below face
@@ -87,16 +89,42 @@ def CameraProgram1(Names, Encodings):
 
 def CameraProgram2():
     video_capture = cv2.VideoCapture(0)
-    detector = FaceDetector()
+    faceDetector = FaceDetector()
+    handDetector = HandDetector(detectionCon=0.8, maxHands=2)
     
     while True:
         isReading, frame = video_capture.read()
-        frame = detector.findHands(frame)
-        hand_is_present, bbox = detector.findPosition(frame)
+        hands, image = handDetector.findHands(frame) #FlipType is default set to true, if hands are being recognized incorrectly then set to false as a paremeter
+        #Every h in hands contains a dictionary {lmList, bbox, center, type} for a hand
         
-        cv2.imshow("Camera Program #2", frame)
-        cv2.waitKey(1)
+        if hands: #if any hands are detected
+            hand1 = hands[0]
+            lmList1 = hand1["lmList"] #List of 21 points of interest on the hand
+            bbox1 = hand1["bbox"] #Bounding Box Information (x, y, w, h) w = width, h = height
+            center1 = hand1["center"] #center of the hand, cx, cy
+            handType1 = hand1["type"] #Returns Left or Right
+            finger1 = handDetector.fingersUp(hand1)
+        
+        if finger1 == [0, 1, 1, 0, 0]:
+            takePhoto() #NOTE: Add threading so that this can run concurrently with the program
+        
+        
+        cv2.imshow("Camera Program #2", image)
+        cv2.waitKey(1) #1ms
     
+def takePhoto():
+    print("Taking Photo in 5 seconds.")
+    print("5")
+    sleep(1)
+    print("4")
+    sleep(1)
+    print("3")
+    sleep(1)
+    print("2")
+    sleep(1)
+    print("1")
+    sleep(1)
+    print("Taking Photo.")
 
 def UserInput():
     choice = input(
