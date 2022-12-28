@@ -4,9 +4,11 @@ import face_recognition
 import numpy
 import os
 from time import sleep
+from threading import Thread
 from cvzone.FaceDetectionModule import FaceDetector
 from cvzone.HandTrackingModule import HandDetector
 
+global takingPhoto
 
 def main():
     names, encodings = initialTraining()
@@ -88,9 +90,11 @@ def CameraProgram1(Names, Encodings):
     cv2.destroyAllWindows()
 
 def CameraProgram2():
+    print("Camera Program #2 Loaded. To take a photo, please make a peace symbol.\n")
     video_capture = cv2.VideoCapture(0)
     faceDetector = FaceDetector()
-    handDetector = HandDetector(detectionCon=0.8, maxHands=2)
+    handDetector = HandDetector(detectionCon=0.8, maxHands=1)
+    takingPhoto = False
     
     while True:
         isReading, frame = video_capture.read()
@@ -105,14 +109,17 @@ def CameraProgram2():
             handType1 = hand1["type"] #Returns Left or Right
             finger1 = handDetector.fingersUp(hand1)
         
-        if finger1 == [0, 1, 1, 0, 0]:
-            takePhoto() #NOTE: Add threading so that this can run concurrently with the program
+            if (finger1 == [0, 1, 1, 0, 0]) and (takingPhoto == False):
+                takingPhoto = True
+                photoThread = Thread(target = takePhoto)
+                photoThread.start()
         
         
         cv2.imshow("Camera Program #2", image)
         cv2.waitKey(1) #1ms
     
 def takePhoto():
+    #path = sys.path[0] + "\Photos" + "\\"
     print("Taking Photo in 5 seconds.")
     print("5")
     sleep(1)
@@ -125,6 +132,10 @@ def takePhoto():
     print("1")
     sleep(1)
     print("Taking Photo.")
+    isReading, img = cv2.VideoCapture(0).read()
+    cv2.imwrite('image.jpg', img)
+    takingPhoto = False
+    
 
 def UserInput():
     choice = input(
