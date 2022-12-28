@@ -9,6 +9,7 @@ from cvzone.FaceDetectionModule import FaceDetector
 from cvzone.HandTrackingModule import HandDetector
 
 global takingPhoto
+global video_capture
 
 def main():
     names, encodings = initialTraining()
@@ -90,33 +91,41 @@ def CameraProgram1(Names, Encodings):
     cv2.destroyAllWindows()
 
 def CameraProgram2():
-    print("Camera Program #2 Loaded. To take a photo, please make a peace symbol.\n")
     video_capture = cv2.VideoCapture(0)
     faceDetector = FaceDetector()
     handDetector = HandDetector(detectionCon=0.8, maxHands=1)
     takingPhoto = False
     
+    print("Camera Program #2 Loaded. To take a photo, please make a peace symbol.\n")
+    
     while True:
         isReading, frame = video_capture.read()
-        hands, image = handDetector.findHands(frame) #FlipType is default set to true, if hands are being recognized incorrectly then set to false as a paremeter
-        #Every h in hands contains a dictionary {lmList, bbox, center, type} for a hand
-        
-        if hands: #if any hands are detected
-            hand1 = hands[0]
-            lmList1 = hand1["lmList"] #List of 21 points of interest on the hand
-            bbox1 = hand1["bbox"] #Bounding Box Information (x, y, w, h) w = width, h = height
-            center1 = hand1["center"] #center of the hand, cx, cy
-            handType1 = hand1["type"] #Returns Left or Right
-            finger1 = handDetector.fingersUp(hand1)
-        
-            if (finger1 == [0, 1, 1, 0, 0]) and (takingPhoto == False):
-                takingPhoto = True
-                photoThread = Thread(target = takePhoto)
-                photoThread.start()
-        
-        
-        cv2.imshow("Camera Program #2", image)
-        cv2.waitKey(1) #1ms
+        if isReading:
+            hands, image = handDetector.findHands(frame) #FlipType is default set to true, if hands are being recognized incorrectly then set to false as a paremeter
+            #Every h in hands contains a dictionary {lmList, bbox, center, type} for a hand
+            
+            if hands: #if any hands are detected
+                hand1 = hands[0]
+                lmList1 = hand1["lmList"] #List of 21 points of interest on the hand
+                bbox1 = hand1["bbox"] #Bounding Box Information (x, y, w, h) w = width, h = height
+                center1 = hand1["center"] #center of the hand, cx, cy
+                handType1 = hand1["type"] #Returns Left or Right
+                finger1 = handDetector.fingersUp(hand1)
+            
+                if (finger1 == [0, 1, 1, 0, 0]) and (takingPhoto == False):
+                    takingPhoto = True
+                    photoThread = Thread(target = takePhoto)
+                    photoThread.start()
+            
+            cv2.imshow("Camera Program #2", image)
+            cv2.waitKey(1) #1ms
+            
+        if cv2.waitKey(1) & 0xFF ==('q'): # Pressing q will exit the while loop and stop reading input from the camera
+            break
+            
+    video_capture.release()
+    cv2.destroyAllWindows()
+
     
 def takePhoto():
     #path = sys.path[0] + "\Photos" + "\\"
@@ -132,7 +141,7 @@ def takePhoto():
     print("1")
     sleep(1)
     print("Taking Photo.")
-    isReading, img = cv2.VideoCapture(0).read()
+    isReading, img = video_capture.read()
     cv2.imwrite('image.jpg', img)
     takingPhoto = False
     
