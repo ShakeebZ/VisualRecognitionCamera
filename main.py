@@ -1,16 +1,18 @@
 import sys
 import cv2
 import face_recognition
-import pickle
 import numpy
 import os
+from cvzone.FaceDetectionModule import FaceDetector
 
 
 def main():
     names, encodings = initialTraining()
     input = UserInput()
     if input == "1":
-        FacialDetection(names, encodings)
+        CameraProgram1(names, encodings)
+    elif input == "2":
+        CameraProgram2()
     else:
         print("\nInvalid Input: Please enter an integer.\n")
         UserInput()
@@ -32,17 +34,17 @@ def initialTraining():
     return Names, Encodings
 
 
-def FacialDetection(Names, Encodings):
+def CameraProgram1(Names, Encodings):
     video_capture = cv2.VideoCapture(0)
     
-    process_frame = True
+    #process_frame = True
     
     while(True):
         isReading, frame = video_capture.read() # read() outputs a value determining whether the operation ran succesfully and an image or frame
         small_frame = cv2.resize(frame, (0, 0), fx = 0.25, fy = 0.25) #Resizing to 1/4 size for faster facial recognition processing
         small_frame = small_frame[:,:,::-1] #Converting from BGR(OpenCV uses this) to RGB(facial_recognition uses this)
         
-        if process_frame:
+        if True:
             face_locations = face_recognition.face_locations(small_frame)
             face_encodings = face_recognition.face_encodings(small_frame, face_locations)
             
@@ -56,7 +58,7 @@ def FacialDetection(Names, Encodings):
                     face_name = Names[best_match]
                 else: face_name = "Unknown"
             
-        process_frame = not process_frame
+        #process_frame = not process_frame
 
         faces = zip(face_locations, face_encodings)
         for (top, right, bottom, left), image_face_encodings in faces:
@@ -66,14 +68,14 @@ def FacialDetection(Names, Encodings):
             left *= 4
             bottom *= 4
                 
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-            cv2.rectangle(frame, (left, bottom - 15), (right, bottom), (0, 0, 255), cv2.FILLED)
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2) #Border around face
+            cv2.rectangle(frame, (left, bottom - 15), (right, bottom), (0, 0, 255), cv2.FILLED) #Filled in rectangle below face for name
             
             font = cv2.FONT_HERSHEY_DUPLEX
-            cv2.putText(frame, face_name, (left+6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+            cv2.putText(frame, face_name, (left+6, bottom - 6), font, 1.0, (255, 255, 255), 1) #Placing text below face
         
         
-        cv2.imshow("Camera Feed", frame) #imshow takes in a string parameter to name the feed and an image or frame
+        cv2.imshow("Camera Program #1", frame) #imshow takes in a string parameter to name the feed and an image or frame
         
         #NEED TO FIX THIS, camera won't close when q is pressed: Error is located in 0xFF == ('q')
         
@@ -83,10 +85,22 @@ def FacialDetection(Names, Encodings):
     video_capture.release()
     cv2.destroyAllWindows()
 
+def CameraProgram2():
+    video_capture = cv2.VideoCapture(0)
+    detector = FaceDetector()
+    
+    while True:
+        isReading, frame = video_capture.read()
+        frame = detector.findHands(frame)
+        hand_is_present, bbox = detector.findPosition(frame)
+        
+        cv2.imshow("Camera Program #2", frame)
+        cv2.waitKey(1)
+    
 
 def UserInput():
     choice = input(
-        "\nWhat would you like to do?\n1)Run the Facial Detection Program\n2)Train a new face\n")
+        "\nWhat would you like to do?\n1)Run Camera Program #1 (Made Using OpenCV)\n2)Run Camera Program #2 (Made Using CVZone)\n3)Train a new face\n")
     # Add Option for gestures to take photos later
     if choice.isnumeric():
         return choice
