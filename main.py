@@ -12,15 +12,33 @@ from cvzone.HandTrackingModule import HandDetector
 
 def main():
     names, encodings = initialTraining()
-    input = UserInput()
-    if input == "1":
-        CameraProgram1(names, encodings)
-    elif input == "2":
-        CameraProgram2()
-    else:
-        print("\nInvalid Input: Please enter an integer.\n")
-        UserInput()
+    UserInput(names, encodings)
 
+def trainFace(Names, Encodings):
+    faceDetector = FaceDetector()
+    video_capture = cv2.VideoCapture(0)
+    isReading, frame = video_capture.read()
+    faces, image = faceDetector.findFaces(frame)
+    path = sys.path[0] + "\TrainingFaces" + "\\"
+    
+    if (len(faces) == 1):
+        for x in range(5,0,-1):
+            print(x)
+            sleep(1)
+        print("Taking Photo.")
+        isReading, img = video_capture.read()
+        firstName = input("Please enter your first name: ")
+        lastName = input("Please enter your last name: ")
+        cv2.imwrite(os.path.join(path,firstName + " " + lastName + ".jpg"), img)
+        Names.append(firstName + " " + lastName)
+        img = face_recognition.load_image_file(path + "firstName" + " " + lastName + ".jpg")
+        Encodings.append(face_recognition.face_encodings(img)[0])
+    else:
+        print("Multiple Faces detected. Restarting Training Process.\n")
+        for x in range(5,0,-1):
+            print(x)
+            sleep(1)
+            trainFace()    
 
 def initialTraining():
     path = sys.path[0] + "\TrainingFaces" + "\\"
@@ -91,7 +109,6 @@ def CameraProgram1(Names, Encodings):
 
 def CameraProgram2():
     video_capture = cv2.VideoCapture(0)
-    faceDetector = FaceDetector()
     handDetector = HandDetector(detectionCon=0.8, maxHands=1)
     takingPhoto = [False]
     
@@ -126,25 +143,34 @@ def CameraProgram2():
     cv2.destroyAllWindows()
     
 def takePhoto(vid, photo):
-    #path = sys.path[0] + "\Photos" + "\\"
+    path = sys.path[0] + "\Photos" + "\\"
     print("Taking Photo in 5 seconds.")
     for x in range(5,0,-1):
         print(x)
         sleep(1)
     print("Taking Photo.")
     isReading, img = vid.read()
-    cv2.imwrite('image.jpg', img)
+    cv2.imwrite(os.path.join(path,'image.jpg'), img)
     sleep(2)
     photo[0] = False
 
-def UserInput():
+def UserInput(Names, Encodings):
     choice = input(
         "\nWhat would you like to do?\n1)Run Camera Program #1 (Made Using OpenCV)\n2)Run Camera Program #2 (Made Using CVZone)\n3)Train a new face\n")
-    if choice.isnumeric():
-        return choice
-    else:
+    if not (choice.isnumeric()):
         print("\nInvalid Input: Please enter an integer.\n")
         UserInput()
+    else:
+        if input == "1":
+            CameraProgram1(Names, Encodings)
+        elif input == "2":
+            CameraProgram2()
+        elif input == "3":
+            print("\nStarting Training process in 5 seconds.\nPlease have only 1 face in frame for picture.\n")
+            trainFace(Names, Encodings)
+        else:
+            print("\nInvalid Input: Please enter an integer.\n")
+            UserInput()
 
 
 if __name__ == "__main__":
