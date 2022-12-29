@@ -8,8 +8,7 @@ from threading import Thread
 from cvzone.FaceDetectionModule import FaceDetector
 from cvzone.HandTrackingModule import HandDetector
 
-global takingPhoto
-global video_capture
+#global takingPhoto
 
 def main():
     names, encodings = initialTraining()
@@ -94,7 +93,7 @@ def CameraProgram2():
     video_capture = cv2.VideoCapture(0)
     faceDetector = FaceDetector()
     handDetector = HandDetector(detectionCon=0.8, maxHands=1)
-    takingPhoto = False
+    takingPhoto = [False]
     
     print("Camera Program #2 Loaded. To take a photo, please make a peace symbol.\n")
     
@@ -103,8 +102,8 @@ def CameraProgram2():
         if isReading:
             hands, image = handDetector.findHands(frame) #FlipType is default set to true, if hands are being recognized incorrectly then set to false as a paremeter
             #Every h in hands contains a dictionary {lmList, bbox, center, type} for a hand
-            
-            if hands: #if any hands are detected
+                        
+            if hands: #if a hand is detected
                 hand1 = hands[0]
                 lmList1 = hand1["lmList"] #List of 21 points of interest on the hand
                 bbox1 = hand1["bbox"] #Bounding Box Information (x, y, w, h) w = width, h = height
@@ -112,9 +111,9 @@ def CameraProgram2():
                 handType1 = hand1["type"] #Returns Left or Right
                 finger1 = handDetector.fingersUp(hand1)
             
-                if (finger1 == [0, 1, 1, 0, 0]) and (takingPhoto == False):
-                    takingPhoto = True
-                    photoThread = Thread(target = takePhoto)
+                if (finger1 == [0, 1, 1, 0, 0]) and (takingPhoto[0] == False): #If user is holding a peace symbol
+                    takingPhoto[0] = True
+                    photoThread = Thread(target = takePhoto, args=(video_capture,takingPhoto))
                     photoThread.start()
             
             cv2.imshow("Camera Program #2", image)
@@ -125,31 +124,21 @@ def CameraProgram2():
             
     video_capture.release()
     cv2.destroyAllWindows()
-
     
-def takePhoto():
+def takePhoto(vid, photo):
     #path = sys.path[0] + "\Photos" + "\\"
     print("Taking Photo in 5 seconds.")
-    print("5")
-    sleep(1)
-    print("4")
-    sleep(1)
-    print("3")
-    sleep(1)
-    print("2")
-    sleep(1)
-    print("1")
-    sleep(1)
+    for x in range(5,0,-1):
+        print(x)
+        sleep(1)
     print("Taking Photo.")
-    isReading, img = video_capture.read()
+    isReading, img = vid.read()
     cv2.imwrite('image.jpg', img)
-    takingPhoto = False
-    
+    photo[0] = False
 
 def UserInput():
     choice = input(
         "\nWhat would you like to do?\n1)Run Camera Program #1 (Made Using OpenCV)\n2)Run Camera Program #2 (Made Using CVZone)\n3)Train a new face\n")
-    # Add Option for gestures to take photos later
     if choice.isnumeric():
         return choice
     else:
