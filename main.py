@@ -83,7 +83,7 @@ def CameraProgram1(Names, Encodings):
         
         #NEED TO FIX THIS, camera won't close when q is pressed: Error is located in 0xFF == ('q')
         
-        if cv2.waitKey(1) & 0xFF ==('q'): # Pressing q will exit the while loop and stop reading input from the camera
+        if (cv2.waitKey(1) & 0xFF )==ord('q'): # Pressing q will exit the while loop and stop reading input from the camera
             break
     
     video_capture.release()
@@ -95,7 +95,7 @@ def CameraProgram2():
     handDetector = HandDetector(detectionCon=0.8, maxHands=1)
     takingPhoto = [False]
     
-    print("Camera Program #2 Loaded. To take a photo, please make a peace symbol.\n")
+    print("Camera Program #2 Loaded.\nTo take a photo, please make a peace symbol.\nTo exit the program, hold 'q'\n")
     
     while True:
         isReading, frame = video_capture.read()
@@ -119,7 +119,7 @@ def CameraProgram2():
             cv2.imshow("Camera Program #2", image)
             cv2.waitKey(1) #1ms
             
-        if cv2.waitKey(1) & 0xFF ==('q'): # Pressing q will exit the while loop and stop reading input from the camera
+        if (cv2.waitKey(1) & 0xFF )==ord('q'): # Pressing q will exit the while loop and stop reading input from the camera
             break
             
     video_capture.release()
@@ -134,6 +134,7 @@ def takePhoto(vid, photo):
     print("Taking Photo.")
     isReading, img = vid.read()
     cv2.imwrite('image.jpg', img)
+    sleep(2)
     photo[0] = False
 
 def UserInput():
